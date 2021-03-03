@@ -245,9 +245,9 @@ void BaseRealSenseNode::publishTopics()
     setupPublishers();
     setupStreams();
     SetBaseStream();
-    registerAutoExposureROIOptions();
-    publishStaticTransforms();
-    publishIntrinsics();
+//    registerAutoExposureROIOptions();
+//    publishStaticTransforms();
+//    publishIntrinsics();
     ROS_INFO_STREAM("RealSense Node Is Up!");
 }
 
@@ -856,14 +856,14 @@ void BaseRealSenseNode::setupDevice()
             frame_callback_function = [this](rs2::frame frame){frame_callback(frame);};
         }
 
-        if (_imu_sync_method == imu_sync_method::NONE)
+/*        if (_imu_sync_method == imu_sync_method::NONE)
         {
             imu_callback_function = [this](rs2::frame frame){imu_callback(frame);};
         }
         else
         {
             imu_callback_function = [this](rs2::frame frame){imu_callback_sync(frame, _imu_sync_method);};
-        }
+        }*/
         std::function<void(rs2::frame)> multiple_message_callback_function = [this](rs2::frame frame){multiple_message_callback(frame, _imu_sync_method);};
 
         ROS_INFO_STREAM("Device Sensors: ");
@@ -893,7 +893,7 @@ void BaseRealSenseNode::setupDevice()
             }
             else if (sensor.is<rs2::motion_sensor>())
             {
-                _sensors_callback[module_name] = imu_callback_function;
+//                _sensors_callback[module_name] = imu_callback_function;
             }
             else if (sensor.is<rs2::pose_sensor>())
             {
@@ -951,7 +951,7 @@ void BaseRealSenseNode::setupPublishers()
     {
         if (_enable[stream])
         {
-            std::stringstream image_raw, camera_info;
+/*            std::stringstream image_raw, camera_info;
             bool rectified_image = false;
             if (stream == DEPTH || stream == CONFIDENCE || stream == INFRA1 || stream == INFRA2)
                 rectified_image = true;
@@ -973,7 +973,7 @@ void BaseRealSenseNode::setupPublishers()
                 _depth_aligned_image_publishers[stream] = {image_transport::create_publisher(&_node, aligned_image_raw.str(),
                                                            qos_string_to_qos(_qos[stream]))};
                 _depth_aligned_info_publisher[stream] = _node.create_publisher<sensor_msgs::msg::CameraInfo>(aligned_camera_info.str(), 1);
-            }
+            }*/
 
             if (stream == DEPTH && _pointcloud)
             {
@@ -1015,7 +1015,7 @@ void BaseRealSenseNode::setupPublishers()
     if (_enable[COLOR] &&
         _enable[DEPTH])
     {
-        _depth_to_other_extrinsics_publishers[COLOR] = _node.create_publisher<Extrinsics>("extrinsics/depth_to_color", qos_profile_latched);
+//        _depth_to_other_extrinsics_publishers[COLOR] = _node.create_publisher<Extrinsics>("extrinsics/depth_to_color", qos_profile_latched);
     }
 
     if (_enable[INFRA1] &&
@@ -1750,23 +1750,23 @@ void BaseRealSenseNode::frame_callback(rs2::frame frame)
                     }
                     continue;
                 }
-                stream_index_pair sip{stream_type,stream_index};
+/*                stream_index_pair sip{stream_type,stream_index};
                 publishFrame(f, t,
                                 sip,
                                 _image,
                                 _info_publisher,
                                 _image_publishers, _seq,
                                 _camera_info, _optical_frame_id,
-                                _encoding);
+                                _encoding);*/
             }
 
-            if (_align_depth && is_depth_arrived)
+/*            if (_align_depth && is_depth_arrived)
             {
                 ROS_DEBUG("publishAlignedDepthToOthers(...)");
                 publishAlignedDepthToOthers(frameset, t);
-            }
+            }*/
         }
-        else if (frame.is<rs2::video_frame>())
+/*        else if (frame.is<rs2::video_frame>())
         {
             auto stream_type = frame.get_profile().stream_type();
             auto stream_index = frame.get_profile().stream_index();
@@ -1789,7 +1789,7 @@ void BaseRealSenseNode::frame_callback(rs2::frame frame)
                             _image_publishers, _seq,
                             _camera_info, _optical_frame_id,
                             _encoding);
-        }
+        }*/
     }
     catch(const std::exception& ex)
     {
@@ -1805,8 +1805,8 @@ void BaseRealSenseNode::multiple_message_callback(rs2::frame frame, imu_sync_met
     {
         case RS2_STREAM_GYRO:
         case RS2_STREAM_ACCEL:
-            if (sync_method > imu_sync_method::NONE) imu_callback_sync(frame, sync_method);
-            else imu_callback(frame);
+//            if (sync_method > imu_sync_method::NONE) imu_callback_sync(frame, sync_method);
+//            else imu_callback(frame);
             break;
         case RS2_STREAM_POSE:
             pose_callback(frame);
@@ -2149,7 +2149,7 @@ void BaseRealSenseNode::publishStaticTransforms()
     }
 
     // Publish Extrinsics Topics:
-    if (_enable[DEPTH] &&
+/*    if (_enable[DEPTH] &&
         _enable[FISHEYE])
     {
         static const char* frame_id = "depth_to_fisheye_extrinsics";
@@ -2184,7 +2184,7 @@ void BaseRealSenseNode::publishStaticTransforms()
         const auto& ex = base_profile.get_extrinsics_to(getAProfile(INFRA2));
         _depth_to_other_extrinsics[INFRA2] = ex;
         _depth_to_other_extrinsics_publishers[INFRA2]->publish(rsExtrinsicsToMsg(ex, frame_id));
-    }
+    }*/
 
 }
 
@@ -2238,11 +2238,11 @@ void BaseRealSenseNode::publishPointCloud(rs2::points pc, const rclcpp::Time& t,
     ROS_INFO_STREAM_ONCE("publishing " << (_ordered_pc ? "" : "un") << "ordered pointcloud.");
     std::vector<NamedFilter>::iterator pc_filter = find_if(_filters.begin(), _filters.end(), [] (NamedFilter s) { return s._name == "pointcloud"; } );
     rs2_stream texture_source_id = static_cast<rs2_stream>(pc_filter->_filter->get_option(rs2_option::RS2_OPTION_STREAM_FILTER));
-    bool use_texture = texture_source_id != RS2_STREAM_ANY;
+//    bool use_texture = texture_source_id != RS2_STREAM_ANY;
     static int warn_count(0);
     static const int DISPLAY_WARN_NUMBER(5);
     rs2::frameset::iterator texture_frame_itr = frameset.end();
-    if (use_texture)
+/*    if (use_texture)
     {
         std::set<rs2_format> available_formats{ rs2_format::RS2_FORMAT_RGB8, rs2_format::RS2_FORMAT_Y8 };
         
@@ -2257,7 +2257,7 @@ void BaseRealSenseNode::publishPointCloud(rs2::points pc, const rclcpp::Time& t,
             return;
         }
         warn_count = 0;
-    }
+    }*/
 
     int texture_width(0), texture_height(0);
     int num_colors(0);
@@ -2279,7 +2279,7 @@ void BaseRealSenseNode::publishPointCloud(rs2::points pc, const rclcpp::Time& t,
 
     vertex = pc.get_vertices();
     size_t valid_count(0);
-    if (use_texture)
+/*    if (use_texture)
     {
         rs2::video_frame texture_frame = (*texture_frame_itr).as<rs2::video_frame>();
         texture_width = texture_frame.get_width();
@@ -2337,7 +2337,7 @@ void BaseRealSenseNode::publishPointCloud(rs2::points pc, const rclcpp::Time& t,
         }
     }
     else
-    {
+    {*/
         std::string format_str = "intensity";
         _msg_pointcloud.point_step = addPointField(_msg_pointcloud, format_str.c_str(), 1, sensor_msgs::msg::PointField::FLOAT32, _msg_pointcloud.point_step);
         _msg_pointcloud.row_step = _msg_pointcloud.width * _msg_pointcloud.point_step;
@@ -2360,7 +2360,7 @@ void BaseRealSenseNode::publishPointCloud(rs2::points pc, const rclcpp::Time& t,
                 ++valid_count;
             }
         }
-    }
+//    }
     _msg_pointcloud.header.stamp = t;
     _msg_pointcloud.header.frame_id = _optical_frame_id[DEPTH];
     if (!_ordered_pc)
